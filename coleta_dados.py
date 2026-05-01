@@ -48,3 +48,13 @@ fig = px.line(df, x="Horário", y="Produção")
 st.plotly_chart(fig, use_container_width=True)
 
 st.dataframe(df)
+
+# 💾 Download
+csv = df.to_csv(index=False, sep=";", encoding="utf-8-sig")
+
+st.download_button(
+    "💾 Baixar CSV",
+    csv,
+    "historico.csv",
+    "text/csv"
+)
