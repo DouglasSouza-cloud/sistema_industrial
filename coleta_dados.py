@@ -8,8 +8,14 @@ import os
 from dotenv import load_dotenv
 import time
 
+# =========================
+# 🔐 .ENV
+# =========================
 load_dotenv()
 
+# =========================
+# 🔌 CONEXÃO
+# =========================
 def get_conn():
     return mysql.connector.connect(
         host=os.getenv("DB_HOST"),
@@ -19,11 +25,17 @@ def get_conn():
         port=int(os.getenv("DB_PORT"))
     )
 
+# =========================
+# ⚙ CONFIG
+# =========================
 st.set_page_config(layout="wide")
-st.title("📊 Dashboard Industrial")
+st.title("📊 Dashboard Industrial - Monitoramento")
 
 META = 250
 
+# =========================
+# 🔥 ESTADO
+# =========================
 if "dados" not in st.session_state:
     st.session_state.dados = []
     st.session_state.tempos = []
@@ -39,10 +51,12 @@ if col2.button("⛔ Parar"):
 
 placeholder = st.empty()
 
-# 🔥 LOOP (IGUAL ANTES)
+# =========================
+# 🔄 LOOP TEMPO REAL
+# =========================
 if st.session_state.rodando:
 
-    for i in range(100000):  # loop longo
+    for i in range(100000):
 
         if not st.session_state.rodando:
             break
@@ -50,7 +64,9 @@ if st.session_state.rodando:
         valor = round(random.uniform(100, 400), 2)
         horario = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # salva no banco
+        # =========================
+        # 💾 SALVA NO MYSQL
+        # =========================
         try:
             conn = get_conn()
             cursor = conn.cursor()
@@ -65,7 +81,9 @@ if st.session_state.rodando:
         except:
             pass
 
-        # salva local (só últimos 20)
+        # =========================
+        # 📊 DADOS LOCAIS (LIMITADO)
+        # =========================
         st.session_state.dados.append(valor)
         st.session_state.tempos.append(horario)
 
@@ -79,28 +97,82 @@ if st.session_state.rodando:
         })
 
         media = df["Produção"].mean()
+        ultimo = df["Produção"].iloc[-1]
         abaixo_meta = df[df["Produção"] < META]
 
+        # =========================
+        # 🎛 DASHBOARD
+        # =========================
         with placeholder.container():
 
+            # 🚨 STATUS
+            if ultimo < META:
+                st.error("🔴 STATUS: PRODUÇÃO ABAIXO DA META")
+            else:
+                st.success("🟢 STATUS: OPERAÇÃO NORMAL")
+
+            st.divider()
+
+            # 📊 MÉTRICAS
             c1, c2, c3 = st.columns(3)
 
             c1.metric("📊 Média", round(media, 2))
-            c2.metric("❌ Abaixo da Meta", len(abaixo_meta))
-            c3.metric("📈 Último Valor", valor)
+            c2.metric("📈 Última Produção", ultimo)
+            c3.metric("❌ Ocorrências", len(abaixo_meta))
 
-            fig = px.line(df, x="Horário", y="Produção", markers=True)
+            st.divider()
 
-            # 🔥 linha da meta
+            # 📈 GRÁFICO
+            fig = px.line(
+                df,
+                x="Horário",
+                y="Produção",
+                markers=True,
+                title="Produção em Tempo Real"
+            )
+
+            fig.update_traces(
+                marker=dict(
+                    color=[
+                        "green" if v >= META else "red"
+                        for v in df["Produção"]
+                    ]
+                )
+            )
+
             fig.add_hline(
                 y=META,
                 line_dash="dash",
-                line_color="red",
-                annotation_text="Meta",
-                annotation_position="top left"
-)
+                line_color="white",
+                annotation_text="Meta"
+            )
+
+            fig.update_layout(
+                template="plotly_dark",
+                xaxis_title="Tempo",
+                yaxis_title="Produção"
+            )
+
             st.plotly_chart(fig, use_container_width=True)
 
-            st.dataframe(df)
+            st.divider()
+
+            # 🚨 ALERTAS
+            st.subheader("🚨 Alertas")
+
+            if not abaixo_meta.empty:
+                st.error(f"{len(abaixo_meta)} ocorrências abaixo da meta")
+            else:
+                st.success("Nenhuma ocorrência crítica")
+
+            st.divider()
+
+            # 📋 LOG
+            st.subheader("📋 Log de Ocorrências")
+
+            if not abaixo_meta.empty:
+                st.dataframe(abaixo_meta.tail(10), use_container_width=True)
+            else:
+                st.info("Sem registros críticos recentes")
 
         time.sleep(1)
