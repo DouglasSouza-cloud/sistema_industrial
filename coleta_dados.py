@@ -2,6 +2,7 @@ import streamlit as st
 import random
 from datetime import datetime
 import pandas as pd
+import plotly.express as px
 
 st.set_page_config(layout="wide")
 
@@ -42,5 +43,8 @@ col1, col2 = st.columns(2)
 
 col1.metric("📊 Média", round(media, 2))
 col2.metric("❌ Abaixo da Meta", len(abaixo_meta))
+
+fig = px.line(df, x="Horário", y="Produção")
+st.plotly_chart(fig, use_container_width=True)
 
 st.dataframe(df)
