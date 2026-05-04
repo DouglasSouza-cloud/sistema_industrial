@@ -99,6 +99,7 @@ if st.session_state.rodando:
         media = df["Produção"].mean()
         ultimo = df["Produção"].iloc[-1]
         abaixo_meta = df[df["Produção"] < META]
+        eficiencia = (ultimo / META) * 100
 
         # =========================
         # 🎛 DASHBOARD
@@ -114,11 +115,12 @@ if st.session_state.rodando:
             st.divider()
 
             # 📊 MÉTRICAS
-            c1, c2, c3 = st.columns(3)
+            c1, c2, c3, c4 = st.columns(4)
 
             c1.metric("📊 Média", round(media, 2))
             c2.metric("📈 Última Produção", ultimo)
             c3.metric("❌ Ocorrências", len(abaixo_meta))
+            c4.metric("⚙ Eficiência", f"{eficiencia:.1f}%")
 
             st.divider()
 
