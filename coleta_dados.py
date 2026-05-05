@@ -14,14 +14,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_secret(key):
-    # tenta pegar do Streamlit (deploy)
-    if key in st.secrets:
+    try:
         return st.secrets[key]
-    # senão pega do .env (local)
-    return os.getenv(key)
+    except:
+        return os.getenv(key)
 
 # =========================
-# 🔌 CONEXÃO
+# 🔌 CONEXÃO MYSQL
 # =========================
 def get_conn():
     return mysql.connector.connect(
@@ -36,7 +35,7 @@ def get_conn():
 # ⚙ CONFIG
 # =========================
 st.set_page_config(layout="wide")
-st.title("📊 Dashboard Industrial - Monitoramento")
+st.title("🏭 Monitoramento de Produção de Peças")
 
 META = 250
 
@@ -51,6 +50,9 @@ if "dados" not in st.session_state:
     st.session_state.tempos = []
     st.session_state.rodando = False
 
+# =========================
+# 🎮 CONTROLES
+# =========================
 col1, col2 = st.columns(2)
 
 if col1.button("▶ Iniciar"):
@@ -89,7 +91,7 @@ if st.session_state.rodando:
         except Exception as e:
             st.error(f"Erro no MySQL: {e}")
 
-        # 📊 DADOS LOCAIS (limitado)
+        # 📊 DADOS LOCAIS (LIMITADO)
         st.session_state.dados.append(valor)
         st.session_state.tempos.append(horario)
 
@@ -99,15 +101,15 @@ if st.session_state.rodando:
 
         df = pd.DataFrame({
             "Horário": st.session_state.tempos,
-            "Produção": st.session_state.dados
+            "Peças Produzidas": st.session_state.dados
         })
 
-        media = df["Produção"].mean()
-        ultimo = df["Produção"].iloc[-1]
-        abaixo_meta = df[df["Produção"] < META]
+        media = df["Peças Produzidas"].mean()
+        ultimo = df["Peças Produzidas"].iloc[-1]
+        abaixo_meta = df[df["Peças Produzidas"] < META]
         eficiencia = (ultimo / META) * 100
 
-        # ⏱ TEMPO CRÍTICO CONTÍNUO
+        # ⏱ TEMPO CRÍTICO
         if ultimo < META:
             st.session_state.tempo_critico += 1
         else:
@@ -129,27 +131,28 @@ if st.session_state.rodando:
             # MÉTRICAS
             c1, c2, c3, c4, c5 = st.columns(5)
 
-            c1.metric("📊 Média", round(media, 2))
-            c2.metric("📈 Última Produção", ultimo)
-            c3.metric("❌ Ocorrências", len(abaixo_meta))
+            c1.metric("📊 Média (peças/min)", round(media, 2))
+            c2.metric("📈 Produção Atual", ultimo)
+            c3.metric("❌ Abaixo da Meta", len(abaixo_meta))
             c4.metric("⚙ Eficiência", f"{eficiencia:.1f}%")
             c5.metric("⏱ Tempo Crítico", f"{st.session_state.tempo_critico}s")
 
             st.divider()
 
-            # GRÁFICO
+            # 📈 GRÁFICO
             fig = px.line(
                 df,
                 x="Horário",
-                y="Produção",
-                markers=True
+                y="Peças Produzidas",
+                markers=True,
+                title="Produção de Peças por Minuto"
             )
 
             fig.update_traces(
                 marker=dict(
                     color=[
                         "green" if v >= META else "red"
-                        for v in df["Produção"]
+                        for v in df["Peças Produzidas"]
                     ]
                 )
             )
@@ -164,24 +167,24 @@ if st.session_state.rodando:
             fig.update_layout(
                 template="plotly_dark",
                 xaxis_title="Tempo",
-                yaxis_title="Produção"
+                yaxis_title="Peças/min"
             )
 
             st.plotly_chart(fig, use_container_width=True)
 
             st.divider()
 
-            # ALERTAS
+            # 🚨 ALERTAS
             st.subheader("🚨 Alertas")
 
             if not abaixo_meta.empty:
-                st.error(f"{len(abaixo_meta)} ocorrências abaixo da meta")
+                st.error(f"{len(abaixo_meta)} minutos abaixo da meta")
             else:
                 st.success("Nenhuma ocorrência crítica")
 
             st.divider()
 
-            # LOG
+            # 📋 LOG
             st.subheader("📋 Log de Ocorrências")
 
             if not abaixo_meta.empty:
