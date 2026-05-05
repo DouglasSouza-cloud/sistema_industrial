@@ -5,38 +5,44 @@ import pandas as pd
 import plotly.express as px
 import mysql.connector
 import os
-from dotenv import load_dotenv
 import time
+from dotenv import load_dotenv
 
-
-# .ENV
-
+# =========================
+# 🔐 CONFIG (LOCAL + DEPLOY)
+# =========================
 load_dotenv()
 
+def get_secret(key):
+    # tenta pegar do Streamlit (deploy)
+    if key in st.secrets:
+        return st.secrets[key]
+    # senão pega do .env (local)
+    return os.getenv(key)
 
-# CONEXÃO
-
+# =========================
+# 🔌 CONEXÃO
+# =========================
 def get_conn():
     return mysql.connector.connect(
-        host=os.getenv("DB_HOST"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        database=os.getenv("DB_NAME"),
-        port=int(os.getenv("DB_PORT"))
+        host=get_secret("DB_HOST"),
+        user=get_secret("DB_USER"),
+        password=get_secret("DB_PASSWORD"),
+        database=get_secret("DB_NAME"),
+        port=int(get_secret("DB_PORT"))
     )
 
-
-# ONFIG
-
+# =========================
+# ⚙ CONFIG
+# =========================
 st.set_page_config(layout="wide")
 st.title("📊 Dashboard Industrial - Monitoramento")
 
 META = 250
 
-
-# ESTADO
-
-
+# =========================
+# 🔥 ESTADO
+# =========================
 if "tempo_critico" not in st.session_state:
     st.session_state.tempo_critico = 0
 
@@ -55,12 +61,12 @@ if col2.button("⛔ Parar"):
 
 placeholder = st.empty()
 
-
-# LOOP TEMPO REAL
-
+# =========================
+# 🔄 LOOP TEMPO REAL
+# =========================
 if st.session_state.rodando:
 
-    for i in range(100000):
+    for _ in range(100000):
 
         if not st.session_state.rodando:
             break
@@ -68,6 +74,7 @@ if st.session_state.rodando:
         valor = round(random.uniform(100, 400), 2)
         horario = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # 💾 MYSQL
         try:
             conn = get_conn()
             cursor = conn.cursor()
@@ -82,8 +89,7 @@ if st.session_state.rodando:
         except Exception as e:
             st.error(f"Erro no MySQL: {e}")
 
-        
-        # DADOS LOCAIS (LIMITADO)
+        # 📊 DADOS LOCAIS (limitado)
         st.session_state.dados.append(valor)
         st.session_state.tempos.append(horario)
 
@@ -99,17 +105,17 @@ if st.session_state.rodando:
         media = df["Produção"].mean()
         ultimo = df["Produção"].iloc[-1]
         abaixo_meta = df[df["Produção"] < META]
-        tempo_critico = len(abaixo_meta)
         eficiencia = (ultimo / META) * 100
-        
-        # TEMPO CRÍTICO
+
+        # ⏱ TEMPO CRÍTICO CONTÍNUO
         if ultimo < META:
             st.session_state.tempo_critico += 1
         else:
             st.session_state.tempo_critico = 0
 
-        
-        # DASHBOARD
+        # =========================
+        # 🎛 DASHBOARD
+        # =========================
         with placeholder.container():
 
             # STATUS
@@ -136,8 +142,7 @@ if st.session_state.rodando:
                 df,
                 x="Horário",
                 y="Produção",
-                markers=True,
-                title="Produção em Tempo Real"
+                markers=True
             )
 
             fig.update_traces(
