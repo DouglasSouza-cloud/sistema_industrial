@@ -40,14 +40,21 @@ st.title("🏭 Monitoramento de Produção de Peças")
 META = 250
 
 # =========================
-# 🔥 ESTADO
+# 🔥 ESTADOS
 # =========================
 if "tempo_critico" not in st.session_state:
     st.session_state.tempo_critico = 0
 
+if "mostrar_relatorio" not in st.session_state:
+    st.session_state.mostrar_relatorio = False
+
 if "dados" not in st.session_state:
     st.session_state.dados = []
+
+if "tempos" not in st.session_state:
     st.session_state.tempos = []
+
+if "rodando" not in st.session_state:
     st.session_state.rodando = False
 
 # =========================
@@ -57,9 +64,11 @@ col1, col2 = st.columns(2)
 
 if col1.button("▶ Iniciar"):
     st.session_state.rodando = True
+    st.session_state.mostrar_relatorio = False
 
 if col2.button("⛔ Parar"):
     st.session_state.rodando = False
+    st.session_state.mostrar_relatorio = True
 
 placeholder = st.empty()
 
@@ -76,7 +85,9 @@ if st.session_state.rodando:
         valor = round(random.uniform(100, 400), 2)
         horario = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # =========================
         # 💾 MYSQL
+        # =========================
         try:
             conn = get_conn()
             cursor = conn.cursor()
@@ -91,7 +102,9 @@ if st.session_state.rodando:
         except Exception as e:
             st.error(f"Erro no MySQL: {e}")
 
-        # 📊 DADOS LOCAIS (LIMITADO)
+        # =========================
+        # 📊 DADOS LOCAIS
+        # =========================
         st.session_state.dados.append(valor)
         st.session_state.tempos.append(horario)
 
@@ -109,7 +122,9 @@ if st.session_state.rodando:
         abaixo_meta = df[df["Peças Produzidas"] < META]
         eficiencia = (ultimo / META) * 100
 
+        # =========================
         # ⏱ TEMPO CRÍTICO
+        # =========================
         if ultimo < META:
             st.session_state.tempo_critico += 1
         else:
@@ -139,7 +154,9 @@ if st.session_state.rodando:
 
             st.divider()
 
+            # =========================
             # 📈 GRÁFICO
+            # =========================
             fig = px.line(
                 df,
                 x="Horário",
@@ -174,7 +191,9 @@ if st.session_state.rodando:
 
             st.divider()
 
+            # =========================
             # 🚨 ALERTAS
+            # =========================
             st.subheader("🚨 Alertas")
 
             if not abaixo_meta.empty:
@@ -184,7 +203,9 @@ if st.session_state.rodando:
 
             st.divider()
 
+            # =========================
             # 📋 LOG
+            # =========================
             st.subheader("📋 Log de Ocorrências")
 
             if not abaixo_meta.empty:
@@ -193,3 +214,39 @@ if st.session_state.rodando:
                 st.info("Sem registros críticos recentes")
 
         time.sleep(1)
+
+# =========================
+# 📄 RELATÓRIO OPERACIONAL
+# =========================
+if st.session_state.mostrar_relatorio and st.session_state.dados:
+
+    st.divider()
+    st.header("📄 Relatório Operacional")
+
+    producao_total = sum(st.session_state.dados)
+    media_total = sum(st.session_state.dados) / len(st.session_state.dados)
+    maior = max(st.session_state.dados)
+    menor = min(st.session_state.dados)
+
+    ocorrencias = len([
+        v for v in st.session_state.dados
+        if v < META
+    ])
+
+    eficiencia_media = (media_total / META) * 100
+
+    r1, r2, r3 = st.columns(3)
+
+    r1.metric("🏭 Produção Total", f"{producao_total:.0f} peças")
+    r2.metric("📊 Média Geral", f"{media_total:.1f} peças/min")
+    r3.metric("⚙ Eficiência Média", f"{eficiencia_media:.1f}%")
+
+    r4, r5, r6 = st.columns(3)
+
+    r4.metric("📈 Maior Produção", f"{maior:.0f}")
+    r5.metric("📉 Menor Produção", f"{menor:.0f}")
+    r6.metric("🚨 Ocorrências", ocorrencias)
+
+    st.info(
+        f"⏱ Tempo crítico total: {st.session_state.tempo_critico}s"
+    )
