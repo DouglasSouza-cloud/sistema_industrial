@@ -8,9 +8,8 @@ import os
 import time
 from dotenv import load_dotenv
 
-# =========================
-# 🔐 CONFIG (LOCAL + DEPLOY)
-# =========================
+
+# CONFIG (LOCAL + DEPLOY)
 load_dotenv()
 
 def get_secret(key):
@@ -19,9 +18,7 @@ def get_secret(key):
     except:
         return os.getenv(key)
 
-# =========================
-# 🔌 CONEXÃO MYSQL
-# =========================
+# CONEXÃO MYSQL
 def get_conn():
     return mysql.connector.connect(
         host=get_secret("DB_HOST"),
@@ -30,18 +27,15 @@ def get_conn():
         database=get_secret("DB_NAME"),
         port=int(get_secret("DB_PORT"))
     )
-
-# =========================
-# ⚙ CONFIG
-# =========================
+ 
+# CONFIG
 st.set_page_config(layout="wide")
 st.title("🏭 Monitoramento de Produção de Peças")
 
 META = 250
 
-# =========================
-# 🔥 ESTADOS
-# =========================
+
+# ESTADOS
 if "tempo_critico" not in st.session_state:
     st.session_state.tempo_critico = 0
 
@@ -57,9 +51,8 @@ if "tempos" not in st.session_state:
 if "rodando" not in st.session_state:
     st.session_state.rodando = False
 
-# =========================
-# 🎮 CONTROLES
-# =========================
+
+# CONTROLES
 col1, col2 = st.columns(2)
 
 if col1.button("▶ Iniciar"):
@@ -72,9 +65,8 @@ if col2.button("⛔ Parar"):
 
 placeholder = st.empty()
 
-# =========================
-# 🔄 LOOP TEMPO REAL
-# =========================
+
+# LOOP TEMPO REAL
 if st.session_state.rodando:
 
     for _ in range(100000):
@@ -85,9 +77,8 @@ if st.session_state.rodando:
         valor = round(random.uniform(100, 400), 2)
         horario = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # =========================
-        # 💾 MYSQL
-        # =========================
+    
+        # MYSQL
         try:
             conn = get_conn()
             cursor = conn.cursor()
@@ -102,9 +93,8 @@ if st.session_state.rodando:
         except Exception as e:
             st.error(f"Erro no MySQL: {e}")
 
-        # =========================
-        # 📊 DADOS LOCAIS
-        # =========================
+       
+        # DADOS LOCAIS
         st.session_state.dados.append(valor)
         st.session_state.tempos.append(horario)
 
@@ -122,17 +112,15 @@ if st.session_state.rodando:
         abaixo_meta = df[df["Peças Produzidas"] < META]
         eficiencia = (ultimo / META) * 100
 
-        # =========================
-        # ⏱ TEMPO CRÍTICO
-        # =========================
+     
+        # TEMPO CRÍTICO
         if ultimo < META:
             st.session_state.tempo_critico += 1
         else:
             st.session_state.tempo_critico = 0
 
-        # =========================
-        # 🎛 DASHBOARD
-        # =========================
+      
+        # DASHBOARD
         with placeholder.container():
 
             # STATUS
@@ -154,9 +142,8 @@ if st.session_state.rodando:
 
             st.divider()
 
-            # =========================
-            # 📈 GRÁFICO
-            # =========================
+           
+            # GRÁFICO
             fig = px.line(
                 df,
                 x="Horário",
@@ -191,9 +178,8 @@ if st.session_state.rodando:
 
             st.divider()
 
-            # =========================
-            # 🚨 ALERTAS
-            # =========================
+            
+            # ALERTAS
             st.subheader("🚨 Alertas")
 
             if not abaixo_meta.empty:
@@ -203,9 +189,8 @@ if st.session_state.rodando:
 
             st.divider()
 
-            # =========================
-            # 📋 LOG
-            # =========================
+           
+            # LOG
             st.subheader("📋 Log de Ocorrências")
 
             if not abaixo_meta.empty:
@@ -215,9 +200,8 @@ if st.session_state.rodando:
 
         time.sleep(1)
 
-# =========================
-# 📄 RELATÓRIO OPERACIONAL
-# =========================
+
+# RELATÓRIO OPERACIONAL
 if st.session_state.mostrar_relatorio and st.session_state.dados:
 
     st.divider()
