@@ -178,7 +178,7 @@ if st.session_state.rodando:
             st.subheader("🚨 Alertas")
 
             if not abaixo_meta.empty:
-                st.error(f"{len(abaixo_meta)} minutos abaixo da meta")
+                st.error(f"{len(abaixo_meta)} produções abaixo da meta")
             else:
                 st.success("Nenhuma ocorrência crítica")
 
