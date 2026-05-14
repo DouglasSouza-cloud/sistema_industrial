@@ -32,7 +32,7 @@ def get_conn():
 st.set_page_config(layout="wide")
 st.title("🏭 Monitoramento de Produção de Peças")
 
-META = 250
+META = 50
 
 
 # ESTADOS
@@ -78,7 +78,7 @@ if st.session_state.rodando:
         if not st.session_state.rodando:
             break
 
-        valor = round(random.uniform(100, 400), 2)
+        valor = round(random.uniform(30, 70))
         horario = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     
@@ -250,7 +250,7 @@ if st.session_state.mostrar_relatorio and st.session_state.dados:
 
     r7, r8 = st.columns(2)
 
-    r7.metric("🏭 Total de Produções", total_producoes)
+    r7.metric("🏭 Total de Coletas", total_producoes)
     r8.metric("📉 Taxa de Falha", f"{taxa_falha:.1f}%")
 
     st.info(
@@ -259,4 +259,22 @@ if st.session_state.mostrar_relatorio and st.session_state.dados:
     st.info(
     f"🕒 Tempo total de operação: "
     f"{minutos} min {segundos} s"
-)
+    )
+    
+    st.divider()
+
+    st.subheader("📋 Produção por Ciclo")
+
+    df_relatorio = pd.DataFrame({
+        "Ciclo": range(
+            1,
+            len(st.session_state.dados) + 1
+        ),
+        "Horário": st.session_state.tempos,
+        "Peças Produzidas": st.session_state.dados
+    })
+
+    st.dataframe(
+        df_relatorio,
+        use_container_width=True
+    )
