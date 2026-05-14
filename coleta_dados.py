@@ -51,6 +51,9 @@ if "tempos" not in st.session_state:
 if "rodando" not in st.session_state:
     st.session_state.rodando = False
 
+if "inicio_operacao" not in st.session_state:
+    st.session_state.inicio_operacao = None
+
 
 # CONTROLES
 col1, col2 = st.columns(2)
@@ -58,6 +61,7 @@ col1, col2 = st.columns(2)
 if col1.button("▶ Iniciar"):
     st.session_state.rodando = True
     st.session_state.mostrar_relatorio = False
+    st.session_state.inicio_operacao = time.time()
 
 if col2.button("⛔ Parar"):
     st.session_state.rodando = False
@@ -216,9 +220,22 @@ if st.session_state.mostrar_relatorio and st.session_state.dados:
         v for v in st.session_state.dados
         if v < META
     ])
+    
+    total_producoes = len(st.session_state.dados)
+
+    taxa_falha = (
+        ocorrencias / total_producoes
+    ) * 100
 
     eficiencia_media = (media_total / META) * 100
+    
+    tempo_total = int(
+    time.time() - st.session_state.inicio_operacao
+    )
 
+    minutos = tempo_total // 60
+    segundos = tempo_total % 60
+    
     r1, r2, r3 = st.columns(3)
 
     r1.metric("🏭 Produção Total", f"{producao_total:.0f} peças")
@@ -229,8 +246,17 @@ if st.session_state.mostrar_relatorio and st.session_state.dados:
 
     r4.metric("📈 Maior Produção", f"{maior:.0f}")
     r5.metric("📉 Menor Produção", f"{menor:.0f}")
-    r6.metric("🚨 Ocorrências", ocorrencias)
+    r6.metric("🚨 Abaixo da Meta", ocorrencias)
+
+    r7, r8 = st.columns(2)
+
+    r7.metric("🏭 Total de Produções", total_producoes)
+    r8.metric("📉 Taxa de Falha", f"{taxa_falha:.1f}%")
 
     st.info(
         f"⏱ Tempo crítico total: {st.session_state.tempo_critico}s"
     )
+    st.info(
+    f"🕒 Tempo total de operação: "
+    f"{minutos} min {segundos} s"
+)
