@@ -1,0 +1,531 @@
+# Dashboard Industrial Futurista — HTML Completo
+
+```html
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>INDUSTECH SCADA</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    background:#050816;
+    color:white;
+    font-family:'Inter',sans-serif;
+    overflow-x:hidden;
+}
+
+body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+    radial-gradient(circle at top left,#00f0ff22,transparent 30%),
+    radial-gradient(circle at bottom right,#00ff9520,transparent 30%);
+    pointer-events:none;
+}
+
+.container{
+    padding:30px;
+}
+
+/* HEADER */
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:30px;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.title h1{
+    font-size:38px;
+    font-weight:800;
+    letter-spacing:1px;
+}
+
+.title p{
+    color:#94a3b8;
+    margin-top:6px;
+}
+
+.status{
+    padding:14px 24px;
+    border-radius:18px;
+    background:#0f172a;
+    border:1px solid #1e293b;
+    box-shadow:0 0 20px #00ff9520;
+    font-weight:700;
+    color:#00ff95;
+}
+
+/* BUTTONS */
+
+.controls{
+    display:flex;
+    gap:15px;
+    margin-bottom:30px;
+}
+
+button{
+    border:none;
+    padding:14px 24px;
+    border-radius:16px;
+    cursor:pointer;
+    font-size:15px;
+    font-weight:700;
+    transition:0.25s;
+}
+
+.start{
+    background:linear-gradient(135deg,#00ff95,#00c46f);
+    color:#001b10;
+}
+
+.stop{
+    background:linear-gradient(135deg,#ff4d6d,#ff1744);
+    color:white;
+}
+
+button:hover{
+    transform:translateY(-3px);
+    box-shadow:0 10px 25px rgba(0,0,0,0.4);
+}
+
+/* GRID */
+
+.metrics{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:22px;
+    margin-bottom:30px;
+}
+
+.card{
+    background:rgba(15,23,42,0.75);
+    border:1px solid rgba(255,255,255,0.08);
+    backdrop-filter:blur(10px);
+    border-radius:24px;
+    padding:25px;
+    position:relative;
+    overflow:hidden;
+}
+
+.card::before{
+    content:'';
+    position:absolute;
+    width:180px;
+    height:180px;
+    background:#00f0ff12;
+    border-radius:50%;
+    top:-80px;
+    right:-80px;
+}
+
+.card span{
+    color:#94a3b8;
+    font-size:14px;
+    display:block;
+    margin-bottom:12px;
+}
+
+.card h2{
+    font-size:34px;
+    font-weight:800;
+}
+
+/* CHART */
+
+.chart-box{
+    background:rgba(15,23,42,0.75);
+    border:1px solid rgba(255,255,255,0.08);
+    backdrop-filter:blur(10px);
+    border-radius:28px;
+    padding:30px;
+    margin-bottom:30px;
+}
+
+.chart-title{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+}
+
+.chart-title h2{
+    font-size:24px;
+}
+
+.live{
+    color:#00ff95;
+    font-weight:700;
+}
+
+/* LOWER GRID */
+
+.lower{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:24px;
+}
+
+.panel{
+    background:rgba(15,23,42,0.75);
+    border:1px solid rgba(255,255,255,0.08);
+    backdrop-filter:blur(10px);
+    border-radius:28px;
+    padding:25px;
+}
+
+.panel h3{
+    margin-bottom:20px;
+    font-size:22px;
+}
+
+.alert{
+    padding:16px;
+    border-radius:16px;
+    margin-bottom:12px;
+    font-weight:600;
+}
+
+.alert-ok{
+    background:#052e1c;
+    color:#00ff95;
+    border:1px solid #00ff9540;
+}
+
+.alert-danger{
+    background:#3b0713;
+    color:#ff4d6d;
+    border:1px solid #ff4d6d40;
+}
+
+/* TABLE */
+
+table{
+    width:100%;
+    border-collapse:collapse;
+}
+
+th{
+    text-align:left;
+    color:#94a3b8;
+    padding-bottom:12px;
+    font-size:14px;
+}
+
+td{
+    padding:14px 0;
+    border-bottom:1px solid rgba(255,255,255,0.06);
+    font-weight:500;
+}
+
+.ok{
+    color:#00ff95;
+    font-weight:700;
+}
+
+.bad{
+    color:#ff4d6d;
+    font-weight:700;
+}
+
+/* RESPONSIVO */
+
+@media(max-width:950px){
+
+    .lower{
+        grid-template-columns:1fr;
+    }
+
+    .title h1{
+        font-size:28px;
+    }
+
+    .container{
+        padding:18px;
+    }
+
+}
+
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <div class="header">
+
+        <div class="title">
+            <h1>🏭 INDUSTECH SCADA</h1>
+            <p>Monitoramento Inteligente de Produção Industrial</p>
+        </div>
+
+        <div class="status" id="statusBox">
+            ● SISTEMA OPERACIONAL
+        </div>
+
+    </div>
+
+    <div class="controls">
+        <button class="start" onclick="iniciar()">
+            ▶ INICIAR PRODUÇÃO
+        </button>
+
+        <button class="stop" onclick="parar()">
+            ⛔ PARAR SISTEMA
+        </button>
+    </div>
+
+    <div class="metrics">
+
+        <div class="card">
+            <span>📈 Produção Atual</span>
+            <h2 id="atual">0</h2>
+        </div>
+
+        <div class="card">
+            <span>📊 Média Geral</span>
+            <h2 id="media">0</h2>
+        </div>
+
+        <div class="card">
+            <span>⚙ Eficiência</span>
+            <h2 id="eficiencia">0%</h2>
+        </div>
+
+        <div class="card">
+            <span>🚨 Falhas</span>
+            <h2 id="falhas">0</h2>
+        </div>
+
+        <div class="card">
+            <span>⏱ Tempo Crítico</span>
+            <h2 id="tempo">0s</h2>
+        </div>
+
+    </div>
+
+    <div class="chart-box">
+
+        <div class="chart-title">
+            <h2>Produção em Tempo Real</h2>
+            <div class="live">● LIVE</div>
+        </div>
+
+        <canvas id="grafico"></canvas>
+
+    </div>
+
+    <div class="lower">
+
+        <div class="panel">
+            <h3>🚨 Alertas Operacionais</h3>
+
+            <div id="alertaBox">
+                <div class="alert alert-ok">
+                    Nenhuma ocorrência crítica detectada.
+                </div>
+            </div>
+
+        </div>
+
+        <div class="panel">
+
+            <h3>📋 Log Industrial</h3>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th>Horário</th>
+                        <th>Produção</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody id="logs"></tbody>
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+const META = 50;
+
+let dados = [];
+let horarios = [];
+let rodando = false;
+let intervalo;
+let tempoCritico = 0;
+
+const ctx = document.getElementById('grafico');
+
+const chart = new Chart(ctx, 
+    type:'line',
+
+    data:{
+        labels:[],
+        datasets:[{
+            label:'Produção',
+            data:[],
+            borderColor:'#00f0ff',
+            backgroundColor:'#00f0ff22',
+            fill:true,
+            tension:0.4,
+            borderWidth:3,
+            pointRadius:4,
+            pointHoverRadius:7
+        }]
+    },
+
+    options:{
+        responsive:true,
+
+    animation:{
+        duration:800,
+        easing:'easeOutQuart'
+    },
+
+    plugins:{
+        plugins:{
+            legend:{
+                labels:{
+                    color:'white'
+                }
+            }
+        },
+
+        scales:{
+            x:{
+                ticks:{color:'#94a3b8'},
+                grid:{color:'#1e293b'}
+            },
+
+            y:{
+                ticks:{color:'#94a3b8'},
+                grid:{color:'#1e293b'}
+            }
+        }
+    }
+});
+
+function atualizar(){
+
+    const valor = Math.floor(Math.random()*41)+30;
+
+    const horario = new Date().toLocaleTimeString();
+
+    dados.push(valor);
+    horarios.push(horario);
+
+    if(dados.length > 20){
+        dados.shift();
+        horarios.shift();
+    }
+
+    const media = dados.reduce((a,b)=>a+b,0)/dados.length;
+
+    const eficiencia = ((valor/META)*100).toFixed(1);
+
+    const falhas = dados.filter(v=>v<META).length;
+
+    if(valor < META){
+        tempoCritico++;
+    }
+
+    document.getElementById('atual').innerHTML = valor;
+    document.getElementById('media').innerHTML = media.toFixed(1);
+    document.getElementById('eficiencia').innerHTML = eficiencia+'%';
+    document.getElementById('falhas').innerHTML = falhas;
+    document.getElementById('tempo').innerHTML = tempoCritico+'s';
+
+    const status = document.getElementById('statusBox');
+
+    if(valor < META){
+
+        status.style.color = '#ff4d6d';
+        status.innerHTML = '● PRODUÇÃO CRÍTICA';
+
+        document.getElementById('alertaBox').innerHTML = `
+            <div class="alert alert-danger">
+                Produção abaixo da meta detectada.
+            </div>
+        `;
+
+    }else{
+
+        status.style.color = '#00ff95';
+        status.innerHTML = '● SISTEMA OPERACIONAL';
+
+        document.getElementById('alertaBox').innerHTML = `
+            <div class="alert alert-ok">
+                Nenhuma ocorrência crítica detectada.
+            </div>
+        `;
+    }
+
+    chart.data.labels = horarios;
+    chart.data.datasets[0].data = dados;
+    chart.update();
+
+    const logs = document.getElementById('logs');
+
+    const row = logs.insertRow(0);
+
+    row.innerHTML = `
+        <td>${horario}</td>
+        <td>${valor}</td>
+        <td class="${valor >= META ? 'ok':'bad'}">
+            ${valor >= META ? 'NORMAL':'CRÍTICO'}
+        </td>
+    `;
+
+    if(logs.rows.length > 8){
+        logs.deleteRow(8);
+    }
+}
+
+function iniciar(){
+
+    if(rodando) return;
+
+    rodando = true;
+
+    intervalo = setInterval(atualizar,2000);
+}
+
+function parar(){
+
+    rodando = false;
+
+    clearInterval(intervalo);
+}
+
+</script>
+
+</body>
+</html>
+```
+options:{}
