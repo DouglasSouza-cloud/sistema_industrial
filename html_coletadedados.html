@@ -1,15 +1,15 @@
-# Dashboard Industrial Futurista — HTML Completo
-
-```html
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>INDUSTECH SCADA</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -33,9 +33,11 @@ body::before{
     content:'';
     position:fixed;
     inset:0;
+
     background:
     radial-gradient(circle at top left,#00f0ff22,transparent 30%),
     radial-gradient(circle at bottom right,#00ff9520,transparent 30%);
+
     pointer-events:none;
 }
 
@@ -159,6 +161,7 @@ button:hover{
     border-radius:28px;
     padding:30px;
     margin-bottom:30px;
+    height:420px;
 }
 
 .chart-title{
@@ -248,6 +251,12 @@ td{
     font-weight:700;
 }
 
+/* RELATÓRIO */
+
+#relatorio{
+    display:none;
+}
+
 /* RESPONSIVO */
 
 @media(max-width:950px){
@@ -268,6 +277,7 @@ td{
 
 </style>
 </head>
+
 <body>
 
 <div class="container">
@@ -280,12 +290,13 @@ td{
         </div>
 
         <div class="status" id="statusBox">
-            ● SISTEMA OPERACIONAL
+            ● OPERAÇÃO NORMAL
         </div>
 
     </div>
 
     <div class="controls">
+
         <button class="start" onclick="iniciar()">
             ▶ INICIAR PRODUÇÃO
         </button>
@@ -293,6 +304,7 @@ td{
         <button class="stop" onclick="parar()">
             ⛔ PARAR SISTEMA
         </button>
+
     </div>
 
     <div class="metrics">
@@ -313,7 +325,7 @@ td{
         </div>
 
         <div class="card">
-            <span>🚨 Falhas</span>
+            <span>🚨 Abaixo da Meta</span>
             <h2 id="falhas">0</h2>
         </div>
 
@@ -327,7 +339,7 @@ td{
     <div class="chart-box">
 
         <div class="chart-title">
-            <h2>Produção em Tempo Real</h2>
+            <h2>Produção de Peças por Minuto</h2>
             <div class="live">● LIVE</div>
         </div>
 
@@ -338,21 +350,25 @@ td{
     <div class="lower">
 
         <div class="panel">
-            <h3>🚨 Alertas Operacionais</h3>
+
+            <h3>🚨 Alertas</h3>
 
             <div id="alertaBox">
+
                 <div class="alert alert-ok">
-                    Nenhuma ocorrência crítica detectada.
+                    Nenhuma ocorrência crítica
                 </div>
+
             </div>
 
         </div>
 
         <div class="panel">
 
-            <h3>📋 Log Industrial</h3>
+            <h3>📋 Log de Ocorrências</h3>
 
             <table>
+
                 <thead>
                     <tr>
                         <th>Horário</th>
@@ -362,11 +378,14 @@ td{
                 </thead>
 
                 <tbody id="logs"></tbody>
+
             </table>
 
         </div>
 
     </div>
+
+    <div id="relatorio"></div>
 
 </div>
 
@@ -376,39 +395,80 @@ const META = 50;
 
 let dados = [];
 let horarios = [];
+
 let rodando = false;
 let intervalo;
+
 let tempoCritico = 0;
+
+let inicioOperacao = null;
 
 const ctx = document.getElementById('grafico');
 
-const chart = new Chart(ctx, 
+const chart = new Chart(ctx, {
+
     type:'line',
 
     data:{
         labels:[],
-        datasets:[{
+
+        datasets:[
+
+        {
             label:'Produção',
+
             data:[],
+
             borderColor:'#00f0ff',
+
             backgroundColor:'#00f0ff22',
-            fill:true,
+
+            fill:false,
+
             tension:0.4,
+
             borderWidth:3,
+
             pointRadius:4,
+
             pointHoverRadius:7
-        }]
+        },
+
+        {
+            label:'Meta',
+
+            data:[],
+
+            borderColor:'#ff4d6d',
+
+            borderDash:[10,6],
+
+            borderWidth:2,
+
+            pointRadius:0,
+
+            fill:false
+        }
+
+        ]
     },
 
     options:{
+
         responsive:true,
 
-    animation:{
-        duration:800,
-        easing:'easeOutQuart'
-    },
+        maintainAspectRatio:false,
 
-    plugins:{
+        animation:{
+            duration:800,
+            easing:'easeOutQuart'
+        },
+
+        interaction:{
+            intersect:false,
+            mode:'index'
+        },
+
         plugins:{
             legend:{
                 labels:{
@@ -418,14 +478,25 @@ const chart = new Chart(ctx,
         },
 
         scales:{
+
             x:{
-                ticks:{color:'#94a3b8'},
-                grid:{color:'#1e293b'}
+                ticks:{
+                    color:'#94a3b8'
+                },
+
+                grid:{
+                    color:'#1e293b'
+                }
             },
 
             y:{
-                ticks:{color:'#94a3b8'},
-                grid:{color:'#1e293b'}
+                ticks:{
+                    color:'#94a3b8'
+                },
+
+                grid:{
+                    color:'#1e293b'
+                }
             }
         }
     }
@@ -433,66 +504,98 @@ const chart = new Chart(ctx,
 
 function atualizar(){
 
-    const valor = Math.floor(Math.random()*41)+30;
+    const valor =
+        Math.floor(Math.random()*41)+30;
 
-    const horario = new Date().toLocaleTimeString();
+    const horario =
+        new Date().toLocaleTimeString();
 
     dados.push(valor);
     horarios.push(horario);
 
     if(dados.length > 20){
+
         dados.shift();
         horarios.shift();
     }
 
-    const media = dados.reduce((a,b)=>a+b,0)/dados.length;
+    const media =
+        dados.reduce((a,b)=>a+b,0)/dados.length;
 
-    const eficiencia = ((valor/META)*100).toFixed(1);
+    const eficiencia =
+        ((valor/META)*100).toFixed(1);
 
-    const falhas = dados.filter(v=>v<META).length;
+    const falhas =
+        dados.filter(v=>v<META).length;
 
     if(valor < META){
+
         tempoCritico++;
+
+    }else{
+
+        tempoCritico = 0;
     }
 
-    document.getElementById('atual').innerHTML = valor;
-    document.getElementById('media').innerHTML = media.toFixed(1);
-    document.getElementById('eficiencia').innerHTML = eficiencia+'%';
-    document.getElementById('falhas').innerHTML = falhas;
-    document.getElementById('tempo').innerHTML = tempoCritico+'s';
+    document.getElementById('atual').innerHTML =
+        valor;
 
-    const status = document.getElementById('statusBox');
+    document.getElementById('media').innerHTML =
+        media.toFixed(1);
+
+    document.getElementById('eficiencia').innerHTML =
+        eficiencia + '%';
+
+    document.getElementById('falhas').innerHTML =
+        falhas;
+
+    document.getElementById('tempo').innerHTML =
+        tempoCritico + 's';
+
+    const status =
+        document.getElementById('statusBox');
 
     if(valor < META){
 
         status.style.color = '#ff4d6d';
-        status.innerHTML = '● PRODUÇÃO CRÍTICA';
+
+        status.innerHTML =
+            '● PRODUÇÃO ABAIXO DA META';
 
         document.getElementById('alertaBox').innerHTML = `
             <div class="alert alert-danger">
-                Produção abaixo da meta detectada.
+                ${falhas} produções abaixo da meta
             </div>
         `;
 
     }else{
 
         status.style.color = '#00ff95';
-        status.innerHTML = '● SISTEMA OPERACIONAL';
+
+        status.innerHTML =
+            '● OPERAÇÃO NORMAL';
 
         document.getElementById('alertaBox').innerHTML = `
             <div class="alert alert-ok">
-                Nenhuma ocorrência crítica detectada.
+                Nenhuma ocorrência crítica
             </div>
         `;
     }
 
     chart.data.labels = horarios;
+
     chart.data.datasets[0].data = dados;
+
+    chart.data.datasets[1].data =
+        dados.map(()=>META);
+
     chart.update();
 
-    const logs = document.getElementById('logs');
+    const logs =
+        document.getElementById('logs');
 
-    const row = logs.insertRow(0);
+    const row =
+        logs.insertRow(0);
 
     row.innerHTML = `
         <td>${horario}</td>
@@ -502,9 +605,102 @@ function atualizar(){
         </td>
     `;
 
-    if(logs.rows.length > 8){
-        logs.deleteRow(8);
+    if(logs.rows.length > 10){
+        logs.deleteRow(10);
     }
+}
+
+function atualizarRelatorio(){
+
+    if(dados.length === 0) return;
+
+    const relatorio =
+        document.getElementById('relatorio');
+
+    relatorio.style.display = 'block';
+
+    const producaoTotal =
+        dados.reduce((a,b)=>a+b,0);
+
+    const mediaTotal =
+        producaoTotal / dados.length;
+
+    const maior =
+        Math.max(...dados);
+
+    const menor =
+        Math.min(...dados);
+
+    const ocorrencias =
+        dados.filter(v=>v<META).length;
+
+    const taxaFalha =
+        ((ocorrencias/dados.length)*100).toFixed(1);
+
+    const eficienciaMedia =
+        ((mediaTotal/META)*100).toFixed(1);
+
+    const tempoTotal =
+        Math.floor((Date.now() - inicioOperacao)/1000);
+
+    const minutos =
+        Math.floor(tempoTotal/60);
+
+    const segundos =
+        tempoTotal % 60;
+
+    relatorio.innerHTML = `
+
+        <div class="metrics" style="margin-top:30px;">
+
+            <div class="card">
+                <span>🏭 Produção Total</span>
+                <h2>${producaoTotal}</h2>
+            </div>
+
+            <div class="card">
+                <span>📊 Média Geral</span>
+                <h2>${mediaTotal.toFixed(1)}</h2>
+            </div>
+
+            <div class="card">
+                <span>⚙ Eficiência Média</span>
+                <h2>${eficienciaMedia}%</h2>
+            </div>
+
+            <div class="card">
+                <span>📈 Maior Produção</span>
+                <h2>${maior}</h2>
+            </div>
+
+            <div class="card">
+                <span>📉 Menor Produção</span>
+                <h2>${menor}</h2>
+            </div>
+
+            <div class="card">
+                <span>📉 Taxa de Falha</span>
+                <h2>${taxaFalha}%</h2>
+            </div>
+
+        </div>
+
+        <div class="panel">
+
+            <h3>📄 Relatório Operacional</h3>
+
+            <p style="margin-top:15px;color:#94a3b8;">
+                Tempo total de operação:
+                ${minutos} min ${segundos} s
+            </p>
+
+            <p style="margin-top:10px;color:#94a3b8;">
+                Total de ocorrências críticas:
+                ${ocorrencias}
+            </p>
+
+        </div>
+    `;
 }
 
 function iniciar(){
@@ -512,6 +708,10 @@ function iniciar(){
     if(rodando) return;
 
     rodando = true;
+
+    document.getElementById('relatorio').style.display = 'none';
+
+    inicioOperacao = Date.now();
 
     intervalo = setInterval(atualizar,2000);
 }
@@ -521,11 +721,11 @@ function parar(){
     rodando = false;
 
     clearInterval(intervalo);
+
+    atualizarRelatorio();
 }
 
 </script>
 
 </body>
 </html>
-```
-options:{}
